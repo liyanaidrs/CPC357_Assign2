@@ -1,25 +1,26 @@
-# CPC357 ASSIGNMENT 2
+# ☁️ RFID Attendance System
 
 **Course:** CPC357 IoT Architecture & Smart Applications  
-**University:** Universiti Sains Malaysia (USM)  
-**Semester:** 2025/2026  
+**University:** Universiti Sains Malaysia (USM) \
+**Assignment:** 2 \
+**Semester:** 2025/2026 
 
 ## 👥 Group Members
 1. **Nurul Liyana Binti Idris** (160438)
 2. **Nurin Farah Izzati Binti Muhd Rusdi** (160406)
 
-# ☁️ Cloud-Based IoT Attendance System
+---
 
-A smart attendance tracking system that integrates physical RFID hardware with Google Cloud Platform. This project scans student ID cards using an ESP32 microcontroller, processes the data on a Cloud VM, and visualizes real-time attendance logs on a web dashboard.
+## 📖 Project Overview
+A smart attendance tracking system that integrates physical RFID hardware with Google Cloud Platform (GCP). This project scans student ID cards using an ESP32 microcontroller, processes the data on a Cloud VM via MQTT and visualizes real-time attendance logs on a modern web dashboard.
 
-## 🚀 Features
-
-* **Real-time Authentication:** Instant feedback (Buzzer & LED) for valid or invalid cards.
+### 🚀 Key Features
+* **Real-time Authentication:** Instant audio-visual feedback (Buzzer) for valid/invalid cards.
 * **Cloud Architecture:** Powered by Google Cloud Compute Engine (VM) and Cloud SQL.
-* **MQTT Messaging:** Fast, lightweight communication between hardware and the cloud using Mosquitto.
-* **Live Web Dashboard:** A modern, responsive Flask-based dashboard to view entry logs and statistics.
+* **MQTT Messaging:** Fast, lightweight communication using the Mosquitto broker.
+* **Live Web Dashboard:** A responsive Flask-based interface to monitor entry logs.
 * **Timezone Aware:** Automatically logs events in Malaysia Time (GMT+8).
-* **Security:** Differentiates between active students, suspended users, and unknown intruders.
+* **Security:** Differentiates between active students, suspended users and intruders.
 
 ---
 
@@ -28,16 +29,26 @@ A smart attendance tracking system that integrates physical RFID hardware with G
 ### **Hardware**
 * **Microcontroller:** Cytron Maker Feather AIoT S3 (ESP32-S3)
 * **Input:** RC522 RFID Reader Module (SPI)
-* **Output:** Piezo Buzzer, LED Indicator
-* **Power:** USB-C / LiPo Battery
+* **Output:** Piezo Buzzer
+* **Power:** USB-C
 
 ### **Software & Cloud**
 * **Cloud Provider:** Google Cloud Platform (GCP)
 * **Broker:** Eclipse Mosquitto (MQTT)
-* **Database:** Google Cloud SQL (MySQL)
-* **Backend:** Python 3 (Paho-MQTT, PyMySQL)
-* **Frontend:** Flask (Python), Bootstrap 5, Jinja2
+* **Database:** Google Cloud SQL (MySQL 8.0)
+* **Backend:** Python 3 (Paho-MQTT, PyMySQL, Pytz)
+* **Frontend:** Flask (Python Web Framework), Bootstrap 5
 * **Firmware:** C++ (Arduino IDE)
+
+---
+
+## 📂 Project Structure
+
+| File Name | Description | Location |
+| :--- | :--- | :--- |
+| `attendance.ino` | C++ code for ESP32 to scan cards and handle MQTT. | Hardware |
+| `attendance_logic.py` | Python script that acts as the system "brain" (MQTT <-> SQL). | Cloud VM |
+| `dashboard.py` | Flask web application for the visual dashboard. | Cloud VM |
 
 ---
 
@@ -55,21 +66,54 @@ A smart attendance tracking system that integrates physical RFID hardware with G
 | **3.3V** | 3.3V | Power |
 | **GND** | GND | Ground |
 
-* **Buzzer:** GPIO 6
-* **LED:** GPIO 5
-* **Power Enable:** GPIO 11 (Must be set HIGH in code to enable 3.3V rail)
+* **Buzzer:** GPIO 6 (Positive leg)
+* **Power Enable:** GPIO 11 
 
 ---
 
-## ⚙️ Setup & Installation
+## ⚙️ Deployment Guide
 
-### 1. Cloud Setup (Google Cloud Platform)
-1.  **VM Instance:** Set up an Ubuntu VM on Compute Engine.
-2.  **SQL Database:** Create a Cloud SQL instance (MySQL) and whitelist your VM's IP.
-3.  **Firewall:** Allow ingress traffic on ports `1883` (MQTT) and `5000` (Dashboard).
+### Phase 1: Google Cloud Platform (GCP) Setup
 
-### 2. Database Schema
-Run the following SQL commands to set up your tables:
+1.  **Create VM Instance:**
+    * Go to **Compute Engine** > **VM Instances**.
+    * Create a new instance (e.g., `attendance-server`).
+    * OS: **Ubuntu 20.04 LTS**.
+    * Firewall: Allow HTTP/HTTPS.
+2.  **Create SQL Database:**
+    * Go to **SQL** and create a **MySQL** instance.
+    * Go to **Connections** > **Networking**.
+    * Add your VM's **External IP** to the "Authorized Networks" list.
+3.  **Configure Firewall:**
+    * Go to **VPC Network** > **Firewall**.
+    * Create a rule to allow **Ingress** on ports:
+        * `1883` (MQTT)
+        * `5000` (Flask Dashboard)
+
+### Phase 2: Backend Environment (On VM)
+
+SSH into your VM and run the following commands to set up the environment:
+
+1.  **Update System & Install Dependencies:**
+    ```bash
+    sudo apt update
+    sudo apt install python3-pip mosquitto mosquitto-clients -y
+    ```
+
+2.  **Install Required Python Libraries:**
+    ```bash
+    pip3 install paho-mqtt pymysql flask pytz
+    ```
+
+3.  **Verify MQTT Broker:**
+    ```bash
+    sudo service mosquitto status
+    # Output should show: active (running)
+    ```
+
+### Phase 3: Database Schema
+
+Connect to your SQL instance and run these queries to create the necessary tables:
 
 ```sql
 CREATE DATABASE attendance_db;
@@ -86,71 +130,57 @@ CREATE TABLE logs (
     uid VARCHAR(50),
     status VARCHAR(20),
     timestamp DATETIME
-); 
+);
+
+-- Insert dummy student
+INSERT INTO students (uid, name) VALUES ('C1 2A 4B 99', 'Test Student');
 ```
 
-### 3. Backend Setup (On Google Cloud VM)
-SSH into your VM instance and execute the following commands to install the MQTT Broker and Python dependencies:
+### Phase 4: Hardware & Firmware Setup
 
-1.  **Update and Install System Packages:**
-    ```bash
-    sudo apt update
-    sudo apt install python3-pip mosquitto mosquitto-clients -y
-    ```
-
-2.  **Install Python Libraries:**
-    ```bash
-    pip3 install paho-mqtt pymysql flask pytz
-    ```
-
-3.  **Verify Mosquitto is Running:**
-    ```bash
-    sudo service mosquitto status
-    ```
-    *(It should say "active (running)")*
-
-### 4. Firmware Upload (ESP32)
-1.  **Install Arduino IDE:** Download and install the latest version.
+1.  **Install Arduino IDE** & Drivers for your ESP32 board.
 2.  **Install Board Definitions:**
-    * Go to **File** > **Preferences**.
-    * Add this URL to "Additional Boards Manager URLs":
+    * Open Arduino IDE and go to **File** > **Preferences**.
+    * Add this URL to "Additional Boards Manager URLs": \
         `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
-    * Go to **Tools** > **Board** > **Boards Manager**, search for `esp32` by Espressif Systems, and install it.
+    * Go to **Tools** > **Board** > **Boards Manager**, search for `esp32` by Espressif Systems and click **Install**.
 3.  **Install Libraries:**
     * Go to **Sketch** > **Include Library** > **Manage Libraries**.
-    * Search for and install:
+    * Search for and install the following:
         * `MFRC522` by GithubCommunity
         * `PubSubClient` by Nick O'Leary
-4.  **Configure Code:**
-    Open the `.ino` file and update these lines with your details:
-    ```cpp
-    const char* ssid = "YOUR_WIFI_NAME";
-    const char* password = "YOUR_WIFI_PASSWORD";
-    const char* mqtt_server = "YOUR_VM_EXTERNAL_IP"; // e.g., 34.66.x.x
-    ```
-5.  **Upload:**
-    * Select Board: **"Adafruit Feather ESP32-S3 No PSRAM"** (Compatible with Cytron Feather S3).
-    * Select Port: The COM port your device is connected to.
+4.  **Configure & Upload:**
+    * Open the `attendance.ino` file.
+    * Update the `ssid`, `password`, and `mqtt_server` variables with your specific details (use the VM's External IP for the MQTT server).
+    * Select Board: **"Cytron Maker Feather AIoT S3"**.
+    * Select the correct **Port**.
     * Click **Upload**.
 
+---
 
-## ▶️ How to Run
+## ▶️ How to Run the System
 
-To run the full system, you need two terminal windows open on your VM.
+To see the system in action, you need to run two scripts simultaneously on your Cloud VM.
 
-### 1. Start the Logic Engine (The "Brain")
-This script listens for card scans, checks the database, and sends commands back to the ESP32.
+### 1. Start the Logic Engine
+This script acts as the "brain," listening for card scans and checking the database.
 ```bash
 python3 attendance_logic.py
 ```
+
 ### 2. Start the Web Dashboard
-Open a new SSH window (or use screen/tmux) and run:
+Open a new SSH terminal window and run the dashboard server.
 ```bash
 python3 dashboard.py
 ```
-### 3. Access the System
-* Open your web browser.
-* Go to: http://<YOUR_VM_EXTERNAL_IP>:5000
-* Scan an RFID card on the hardware.
-* Watch the dashboard update in real-time!
 
+### 3. Usage Steps
+1. Open your web browser and navigate to: `http://<YOUR_VM_EXTERNAL_IP>:5000`
+2. Scan an RFID card on the ESP32 hardware.
+3. Valid Card:
+    * Hardware: Buzzer plays a success melody.
+    * Dashboard: Updates immediately with the student's name and "Access Granted" (Green).
+
+4. Invalid Card:
+    * Hardware: Buzzer beeps 3 times (error tone).
+    * Dashboard: Logs "Unknown Card" with "Access Denied" (Red).
