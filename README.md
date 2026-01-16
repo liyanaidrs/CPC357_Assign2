@@ -46,7 +46,7 @@ A smart attendance tracking system that integrates physical RFID hardware with G
 
 | File Name | Description | Location |
 | :--- | :--- | :--- |
-| `attendance.ino` | C++ code for ESP32 to scan cards and handle MQTT. | Hardware |
+| `Attendance.ino` | C++ code for ESP32 to scan cards and handle MQTT. | Hardware |
 | `attendance_logic.py` | Python script that acts as the system "brain" (MQTT <-> SQL). | Cloud VM |
 | `dashboard.py` | Flask web application for the visual dashboard. | Cloud VM |
 
@@ -77,7 +77,7 @@ A smart attendance tracking system that integrates physical RFID hardware with G
 
 1.  **Create VM Instance:**
     * Go to **Compute Engine** > **VM Instances**.
-    * Create a new instance (e.g., `attendance-server`).
+    * Create a new instance (e.g., `Attendance-server`).
     * OS: **Ubuntu 20.04 LTS**.
     * Firewall: Allow HTTP/HTTPS.
 2.  **Create SQL Database:**
