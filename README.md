@@ -77,7 +77,7 @@ A smart attendance tracking system that integrates physical RFID hardware with G
 
 1.  **Create VM Instance:**
     * Go to **Compute Engine** > **VM Instances**.
-    * Create a new instance (e.g., `Attendance-server`).
+    * Create a new instance.
     * OS: **Ubuntu 20.04 LTS**.
     * Firewall: Allow HTTP/HTTPS.
 2.  **Create SQL Database:**
